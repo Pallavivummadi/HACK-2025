@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic AI DevOps System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-bg: #f8f9fa;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+        }
+        
+        .sidebar {
+            background-color: var(--secondary-color);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            transition: all 0.3s;
+            z-index: 1000; /* Ensure sidebar is above main content on mobile */
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+            transition: transform 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .metric-card {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        .agent-status {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .online { background-color: var(--success-color); }
+        .offline { background-color: var(--danger-color); }
+        .warning { background-color: var(--warning-color); }
+        
+        .incident-card { border-left: 4px solid var(--danger-color); }
+        .optimization-card { border-left: 4px solid var(--success-color); }
+        
+        .log-entry {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .log-entry:last-child {
+            border-bottom: none; /* No border for the last log entry */
+        }
+        
+        /* Custom toast styling for better visibility */
+        .custom-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1100;
+            min-width: 250px;
+            animation: slideIn 0.5s forwards;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar { 
+                margin-left: -250px; 
+                width: 250px;
+            }
+            .main-content { 
+                margin-left: 0; 
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+            .sidebar.active { 
+                margin-left: 0; 
+            }
+            .main-content.active { 
+                margin-left: 250px; 
+            }
+            .navbar-toggler { /* For toggling sidebar on small screens */
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Offcanvas for mobile sidebar -->
+    <nav class="navbar navbar-dark bg-secondary d-md-none">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"><i class="bi bi-robot"></i> AI DevOps</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar" aria-controls="offcanvasSidebar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="offcanvas offcanvas-start bg-secondary text-white" tabindex="-1" id="offcanvasSidebar" aria-labelledby="offcanvasSidebarLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="offcanvasSidebarLabel"><i class="bi bi-robot"></i> AI DevOps</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body d-flex flex-column p-3">
+            <ul class="nav nav-pills flex-column mb-auto">
+                <li class="nav-item"><a href="#" class="nav-link active"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a></li>
+                <li><a href="#" class="nav-link text-white"><i class="bi bi-code-square me-2"></i> Code Analysis</a></li>
+                <li><a href="#" class="nav-link text-white"><i class="bi bi-gear me-2"></i> CI/CD Pipelines</a></li>
+                <li><a href="#" class="nav-link text-white"><i class="bi bi-bug me-2"></i> Testing</a></li>
+                <li><a href="#" class="nav-link text-white"><i class="bi bi-cloud-arrow-up me-2"></i> Deployment</a></li>
+                <li><a href="#" class="nav-link text-white"><i class="bi bi-graph-up me-2"></i> Monitoring</a></li>
+                <li><a href="#" class="nav-link text-white"><i class="bi bi-lightning-charge me-2"></i> Incident Response</a></li>
+            </ul>
+            
+            <div class="mt-auto pt-3 border-top">
+                <div class="agent-status">
+                    <span class="status-indicator online"></span>
+                    <span>System Status</span>
+                    <span class="badge bg-success ms-auto">Online</span>
+                </div>
+                <button class="btn btn-sm btn-outline-light w-100 mt-2">
+                    <i class="bi bi-sliders"></i> Settings
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Desktop Sidebar -->
+    <div class="sidebar p-3 d-none d-md-flex flex-column" id="sidebar">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="m-0"><i class="bi bi-robot"></i> AI DevOps</h4>
+            <!-- No toggle button needed for desktop fixed sidebar -->
+        </div>
+        
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item"><a href="#" class="nav-link active"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a></li>
+            <li><a href="#" class="nav-link text-white"><i class="bi bi-code-square me-2"></i> Code Analysis</a></li>
+            <li><a href="#" class="nav-link text-white"><i class="bi bi-gear me-2"></i> CI/CD Pipelines</a></li>
+            <li><a href="#" class="nav-link text-white"><i class="bi bi-bug me-2"></i> Testing</a></li>
+            <li><a href="#" class="nav-link text-white"><i class="bi bi-cloud-arrow-up me-2"></i> Deployment</a></li>
+            <li><a href="#" class="nav-link text-white"><i class="bi bi-graph-up me-2"></i> Monitoring</a></li>
+            <li><a href="#" class="nav-link text-white"><i class="bi bi-lightning-charge me-2"></i> Incident Response</a></li>
+        </ul>
+        
+        <div class="mt-auto pt-3 border-top">
+            <div class="agent-status">
+                <span class="status-indicator online"></span>
+                <span>System Status</span>
+                <span class="badge bg-success ms-auto">Online</span>
+            </div>
+            <button class="btn btn-sm btn-outline-light w-100 mt-2">
+                <i class="bi bi-sliders"></i> Settings
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">AI DevOps Dashboard</h1>
+            <div class="btn-toolbar mb-2 mb-md-0">
+                <div class="btn-group me-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshBtn">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+                <!-- New Task Button -->
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newTaskModal">
+                    <i class="bi bi-plus-circle"></i> New Task
+                </button>
+            </div>
+        </div>
+        
+        <!-- Metrics -->
+        <div class="row mb-4">
+            <div class="col-md-3 col-sm-6">
+                <div class="card">
+                    <div class="card-body metric-card">
+                        <div class="metric-value text-primary" id="buildSuccessRate">98.7%</div>
+                        <div class="text-muted">Build Success</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card">
+                    <div class="card-body metric-card">
+                        <div class="metric-value text-success" id="avgBuildTime">12.4m</div>
+                        <div class="text-muted">Avg Build Time</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card">
+                    <div class="card-body metric-card">
+                        <div class="metric-value text-warning" id="activeIncidents">3</div>
+                        <div class="text-muted">Active Incidents</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card">
+                    <div class="card-body metric-card">
+                        <div class="metric-value text-danger" id="testFailures">1.2%</div>
+                        <div class="text-muted">Test Failures</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="bi bi-activity me-2"></i>Agent Activity
+                    </div>
+                    <div class="card-body">
+                        <img src="https://placehold.co/800x300/e0e0e0/555555?text=Agent+Activity+Chart" class="img-fluid" alt="Agent Activity Chart">
+                    </div>
+                </div>
+                
+                <div class="card optimization-card mb-4">
+                    <div class="card-header">
+                        <i class="bi bi-magic me-2"></i>Recent Optimizations
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            <div class="list-group-item border-0">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">Build Pipeline #42</h6>
+                                    <small class="text-success">15m ago</small>
+                                </div>
+                                <p class="mb-1">Reduced build time by 23%</p>
+                            </div>
+                            <div class="list-group-item border-0">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">Test Suite</h6>
+                                    <small class="text-success">1h ago</small>
+                                </div>
+                                <p class="mb-1">Optimized test order</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="bi bi-cpu me-2"></i>Agent Status
+                    </div>
+                    <div class="card-body">
+                        <div class="agent-status">
+                            <span class="status-indicator online"></span>
+                            <span>Orchestrator</span>
+                            <span class="badge bg-success ms-auto">Active</span>
+                        </div>
+                        <div class="agent-status">
+                            <span class="status-indicator online"></span>
+                            <span>Code Analysis</span>
+                            <span class="badge bg-success ms-auto">Idle</span>
+                        </div>
+                        <div class="agent-status">
+                            <span class="status-indicator warning"></span>
+                            <span>Test Automation</span>
+                            <span class="badge bg-warning ms-auto">Working</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card incident-card mb-4">
+                    <div class="card-header">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Active Incidents
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            <div class="list-group-item border-0">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1 text-danger">API Latency</h6>
+                                    <small class="text-danger">Critical</small>
+                                </div>
+                                <p class="mb-1">Response time > 2s</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-terminal me-2"></i>System Log
+                    </div>
+                    <div class="card-body p-0">
+                        <div style="max-height: 200px; overflow-y: auto;" id="systemLog">
+                            <div class="log-entry p-2">
+                                <span class="text-muted">10:42:15</span> [INFO] CodeAnalysis: Approved PR#83
+                            </div>
+                            <div class="log-entry p-2">
+                                <span class="text-muted">10:38:22</span> [WARN] TestAutomation: Flaky test detected
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Task Modal -->
+    <div class="modal fade" id="newTaskModal" tabindex="-1" aria-labelledby="newTaskModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="newTaskModalLabel">Create New AI Task</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="taskForm">
+                        <div class="mb-3">
+                            <label for="taskType" class="form-label">Task Type</label>
+                            <select class="form-select" id="taskType" required>
+                                <option value="">Select task type...</option>
+                                <option value="Code Review">Code Review</option>
+                                <option value="Pipeline Optimization">Pipeline Optimization</option>
+                                <option value="Test Generation">Test Generation</option>
+                                <option value="Security Scan">Security Scan</option>
+                                <option value="Incident Remediation">Incident Remediation</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="taskTarget" class="form-label">Target (e.g., PR#84, pipeline-42)</label>
+                            <input type="text" class="form-control" id="taskTarget" placeholder="e.g., PR#84, pipeline-42">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="taskInstructions" class="form-label">Instructions (Optional)</label>
+                            <textarea class="form-control" id="taskInstructions" rows="3" placeholder="Provide any specific instructions for the AI agent..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="submitTask">Create Task</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Function to show toast notification
+        function showToast(message, type) {
+            const toastContainer = document.createElement('div');
+            toastContainer.className = 'custom-toast toast align-items-center text-white';
+            toastContainer.classList.add(bg-${type}); // Add Bootstrap background color class
+            toastContainer.setAttribute('role', 'alert');
+            toastContainer.setAttribute('aria-live', 'assertive');
+            toastContainer.setAttribute('aria-atomic', 'true');
+
+            toastContainer.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            
+            document.body.appendChild(toastContainer);
+            
+            const bsToast = new bootstrap.Toast(toastContainer, {
+                autohide: true,
+                delay: 3000 // Toast disappears after 3 seconds
+            });
+            bsToast.show();
+            
+            // Remove toast from DOM after it hides
+            toastContainer.addEventListener('hidden.bs.toast', function () {
+                toastContainer.remove();
+            });
+        }
+
+        // Add log entry to system log
+        function addLogEntry(type, message) {
+            const systemLog = document.getElementById('systemLog');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry p-2';
+            const timestamp = new Date().toLocaleTimeString();
+            logEntry.innerHTML = <span class="text-muted">${timestamp}</span> [${type.toUpperCase()}] ${message};
+            systemLog.prepend(logEntry); // Add to the top
+            // Keep log limited to last 20 entries
+            while (systemLog.children.length > 20) {
+                systemLog.removeChild(systemLog.lastChild);
+            }
+        }
+
+        // Event listener for task submission
+        document.getElementById('submitTask').addEventListener('click', function() {
+            const taskType = document.getElementById('taskType').value;
+            const taskTarget = document.getElementById('taskTarget').value;
+            const taskInstructions = document.getElementById('taskInstructions').value;
+            
+            if (!taskType) {
+                showToast('Please select a task type.', 'danger');
+                return;
+            }
+            
+            const taskMessage = New ${taskType} task created${taskTarget ? ' for ' + taskTarget : ''}.;
+            addLogEntry('TASK', taskMessage + (taskInstructions ? ` Instructions: "${taskInstructions}"` : ''));
+            showToast(taskMessage, 'success');
+            
+            // Clear form fields and close modal
+            document.getElementById('taskForm').reset();
+            bootstrap.Modal.getInstance(document.getElementById('newTaskModal')).hide();
+        });
+
+        // Event listener for refresh button
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            // Simulate refreshing metrics (e.g., randomizing values slightly)
+            document.getElementById('buildSuccessRate').textContent = (98.0 + Math.random() * 2).toFixed(1) + '%';
+            document.getElementById('avgBuildTime').textContent = (10 + Math.random() * 5).toFixed(1) + 'm';
+            document.getElementById('activeIncidents').textContent = Math.floor(Math.random() * 5);
+            document.getElementById('testFailures').textContent = (0.5 + Math.random() * 2).toFixed(1) + '%';
+            
+            addLogEntry('INFO', 'Dashboard metrics refreshed.');
+            showToast('Dashboard refreshed successfully!', 'info');
+        });
+
+        // Initial log entry on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            addLogEntry('INFO', 'Agentic AI DevOps System initialized.');
+        });
+    </script>
+</body>
+</html>
